@@ -9,7 +9,7 @@ def main(argv):
     outputfile = ""
 
     try:
-        opts, args = getopt.getopt(argv, "ho:q:", ["ofile=", "query="])
+        opts, args = getopt.getopt(argv, "ho:q:")
     except getopt.getopt.GetoptError:
         print("books.py -o <outputfile>.json -q <query>")
         sys.exit(2)
@@ -30,25 +30,24 @@ def main(argv):
         url, params={"offset": offset, "language": "dan", "q": query}
     ).json()
 
-    totalpages = math.ceil(first["numFound"] / 100)
-    page = 0
+    total = math.ceil(first["numFound"])
 
-    bar = IncrementalBar("Importing page", max=totalpages)
+    bar = IncrementalBar("Importing documents", max=total)
 
     with open(outputfile, "w") as file:
-        result = {"total": first["numFound"], "data": []}
+        result = {"total": total, "data": []}
 
         while first["numFound"] > offset:
-            page += 1
-            offset += 100
-            bar.next()
 
             next_page = session.get(
                 url, params={"offset": offset, "language": "dan", "q": query}
             ).json()
 
+            offset += 100
+
             for doc in next_page["docs"]:
                 result["data"].append(doc)
+                bar.next()
 
         file.write(json.dumps({"result": result}))
         file.close()
@@ -56,5 +55,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-
     main(sys.argv[1:])
